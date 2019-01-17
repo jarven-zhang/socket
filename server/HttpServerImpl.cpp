@@ -28,44 +28,49 @@ const int QUEUE_MAX_COUNT = 5;
 const int RECEIVE_BUFF_SIZE = 526;
 //const int SEND_BUFF_SIZE = 526;
 
-HttpServerImpl::HttpServerImpl() {
+HttpServerImpl::HttpServerImpl()
+{
 
 }
 
-HttpServerImpl::~HttpServerImpl() {
+HttpServerImpl::~HttpServerImpl() 
+{
 
 }
 
-int HttpServerImpl::init() {
+int HttpServerImpl::init() 
+{
     //    LOG(INFO) << __func__ << endl;
     struct sockaddr_in server_addr;
 
     string ip_file = PROOT_PATH;
     ip_file += IP_PATH;
 
-    if(-1 == RmTool::readConfigFile(ip_file, ALLOWIP, ip_list)){
+    if(-1 == RmTool::readConfigFile(ip_file, ALLOWIP, ip_list))
+    {
         LOG(ERROR) << "read configure file error!";
         exit(-1);
     }
 
-    /* 创建socket */
+    //创建socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd == -1){
+    if (server_fd == -1)
+    {
         LOG(ERROR) << "socket error!";
         exit(-1);
     }
     memset(&server_addr, 0, sizeof(server_addr));
 
-    /* 设置端口，IP，和TCP/IP协议族 */
+    //设置端口，IP，和TCP/IP协议族
     server_addr.sin_family      = AF_INET;
     server_addr.sin_port        = htons(HTTP_PORT) ;
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY) ;
 
-    /*套接字关闭后, 套接字状态TIME_WAIT约保留2到4分钟, 为了不bind失败，设置允许重用*/
+    //套接字关闭后, 套接字状态TIME_WAIT约保留2到4分钟, 为了不bind失败，设置允许重用
     int on = 1;
     setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
-    /* 绑定 */
+    //绑定
     if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr))  < 0)
     {
         LOG(ERROR) << "bind error!";
@@ -75,7 +80,7 @@ int HttpServerImpl::init() {
         exit(-1) ;
     }
 
-    /* 监听 */
+    //监听
     if (listen(server_fd, QUEUE_MAX_COUNT) < 0)
     {
         LOG(ERROR) << "listen error!";
@@ -89,11 +94,12 @@ int HttpServerImpl::init() {
     return 0;
 }
 
-int HttpServerImpl::start() {
+int HttpServerImpl::start() 
+{
     int client_fd = -1;
     struct sockaddr_in client_addr;
 
-    socklen_t client_addr_len = sizeof(client_addr) ;
+    socklen_t client_addr_len = sizeof(client_addr);
 
     char recv_buf[RECEIVE_BUFF_SIZE];
     memset(recv_buf, 0, RECEIVE_BUFF_SIZE);
@@ -102,7 +108,7 @@ int HttpServerImpl::start() {
 
     while (1)
     {
-        /* 调用accept函数阻塞程序，直到接收到客户端的请求 */
+        //调用accept函数阻塞程序，直到接收到客户端的请求
         client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len) ;
         if (client_fd < 0)
         {
@@ -122,7 +128,7 @@ int HttpServerImpl::start() {
             continue;
         }
 
-        /* 接收客户端的请求 */
+        // 接收客户端的请求 
         if(0 >= recv(client_fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
         {
             LOG(ERROR) << "receive error! Maybe the connect is off!";
@@ -131,7 +137,7 @@ int HttpServerImpl::start() {
         }
         LOG(INFO) << "####recv from client :" << recv_buf;
 #if 0
-        /*调用钱包RPC方法，获取信息*/
+        //调用钱包RPC方法，获取信息
         if(-1 == handleRpcRequest(recv_buf, send_buf))
         {
             LOG(ERROR) << "get Wallet RPC ERROR!";
@@ -148,14 +154,14 @@ int HttpServerImpl::start() {
 
         //LOG(INFO) << "####### receive from wallet:[" << send_buf<< "]" << endl;;
 #endif
-        /* 发送响应给客户端 */
+        // 发送响应给客户端
         sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
 //        LOG(INFO) << __LINE__ << send_buf;
         memset(recv_buf, 0, RECEIVE_BUFF_SIZE) ;
 //        free(send_buf);
 //        send_buf = nullptr;
 
-        /* 关闭客户端套接字 */
+        // 关闭客户端套接字
         close(client_fd) ;
     }
 
@@ -163,7 +169,8 @@ int HttpServerImpl::start() {
 }
 
 
-int HttpServerImpl::sendToClient(int& client_fd, const char *send_buf, int buf_size){
+int HttpServerImpl::sendToClient(int& client_fd, const char *send_buf, int buf_size)
+{
     char sendBuff[buf_size];
     memset(sendBuff, 0, buf_size);
 
@@ -179,6 +186,8 @@ int HttpServerImpl::sendToClient(int& client_fd, const char *send_buf, int buf_s
     return 0;
 }
 
-int HttpServerImpl::handle() {
+int HttpServerImpl::handle() 
+{
+    //todo
     return 0;
 }
