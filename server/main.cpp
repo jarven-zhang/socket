@@ -20,7 +20,8 @@
 
 using namespace std;
 
-auto main(int argc, char* argv[]) -> int{
+auto main(int argc, char* argv[]) -> int
+{
     google::InitGoogleLogging(argv[0]); //初始化 glog
 
     mkdir(GLOG_PATH, 0777);
@@ -33,7 +34,8 @@ auto main(int argc, char* argv[]) -> int{
     FLAGS_stop_logging_if_full_disk = true;
 
     auto pServer = make_shared<HttpServer>();//shared_ptr<HttpServer> pServer = make_shared<HttpServer>();
-    if(0 == pServer->init()){
+    if(0 == pServer->init())
+    {
         pServer->start();
     }
 
