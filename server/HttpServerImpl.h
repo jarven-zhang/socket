@@ -10,7 +10,8 @@
 #include <vector>
 #include <string>
 
-class HttpServerImpl {
+class HttpServerImpl 
+{
 public: 
     
     HttpServerImpl();
