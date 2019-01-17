@@ -14,20 +14,24 @@
 
 using namespace std;
 
-HttpServer::HttpServer(){
+HttpServer::HttpServer()
+{
   httpServerImpl = new HttpServerImpl();
 }
 
-HttpServer::~HttpServer(){
+HttpServer::~HttpServer()
+{
     delete httpServerImpl;
     httpServerImpl = nullptr;
 }
 
-int HttpServer::init() {
+int HttpServer::init() 
+{
   return httpServerImpl->init();
 }
 
-int HttpServer::start() {
+int HttpServer::start()
+{
 //    LOG(INFO) << __func__ << endl;
     return httpServerImpl->start();
 }
