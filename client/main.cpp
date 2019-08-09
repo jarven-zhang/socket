@@ -59,7 +59,7 @@ void clientConnect()
     res = connect( sockfd, (struct sockaddr*)&server, sizeof( sockaddr ) );
     if( -1 == res )
     {
-        perror( "sock connect" );
+        perror( "Sock connect" );
         exit( -1 );
     }
 
