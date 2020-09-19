@@ -4,7 +4,7 @@ DIR_SRC = ./src
 SRC = ./*.cpp
 
 TARGET = server
-LIB = -lpthread -lglog
+LIB = -lpthread -L/usr/lib64/lglog
 
 CC = g++
 CFLAGS = -g -Wall -I${DIR_INC} -std=c++11
