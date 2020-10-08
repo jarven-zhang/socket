@@ -46,7 +46,8 @@ int HttpServerImpl::init()
     string ip_file = PROOT_PATH;
     ip_file += IP_PATH;
 
-    if(-1 == RmTool::readConfigFile(ip_file, ALLOWIP, ip_list))
+	//获取IP白名
+    if(-1 == RmTool::getIpWhitelist(ip_file, ip_list))
     {
         LOG(ERROR) << "read configure file error!";
         exit(-1);
@@ -120,6 +121,7 @@ int HttpServerImpl::start()
         LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
 
 //        std::vector<std::string>::iterator iter = find(ip_list.begin(), ip_list.end(), client_address);
+
         auto iter = find(ip_list.begin(), ip_list.end(), client_address);
         if(iter == ip_list.end())
         {
@@ -135,25 +137,8 @@ int HttpServerImpl::start()
             close(client_fd);
             continue;
         }
+
         LOG(INFO) << "####recv from client :" << recv_buf;
-#if 0
-        //调用钱包RPC方法，获取信息
-        if(-1 == handleRpcRequest(recv_buf, send_buf))
-        {
-            LOG(ERROR) << "get Wallet RPC ERROR!";
-            close(client_fd);
-            continue;
-        }
-
-        if(nullptr == send_buf)
-        {
-            LOG(ERROR) << "receive Nothing from walletRPC!";
-            close(client_fd);
-            continue;
-        }
-
-        //LOG(INFO) << "####### receive from wallet:[" << send_buf<< "]" << endl;;
-#endif
         // 发送响应给客户端
         sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
 //        LOG(INFO) << __LINE__ << send_buf;

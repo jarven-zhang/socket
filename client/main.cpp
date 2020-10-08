@@ -11,7 +11,7 @@
 
 const int  SERVER_PORT = 7878;
 const int  BUFF_SIZE   = 526;
-const char *SERVER_IP  = "192.168.1.82";
+const char *SERVER_IP  = "127.0.0.1";
 
 using namespace std;
 
@@ -77,8 +77,8 @@ int main()
     {
         cout << "i:" << i++ << endl;
         thread one(clientConnect);
-        one.detach();
-//        one.join();
+//        one.detach();
+        one.join();
     }
 
     return 0;
