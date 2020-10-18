@@ -105,7 +105,7 @@ int HttpServerImpl::start()
     char recv_buf[RECEIVE_BUFF_SIZE];
     memset(recv_buf, 0, RECEIVE_BUFF_SIZE);
 
-    const char *send_buf = "ok ,we get it";
+    const char send_buf[] = "ok ,we receive it";
 
     while (1)
     {
@@ -140,11 +140,9 @@ int HttpServerImpl::start()
 
         LOG(INFO) << "####recv from client :" << recv_buf;
         // 发送响应给客户端
-        sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
-//        LOG(INFO) << __LINE__ << send_buf;
+        //sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
+        send(client_fd, send_buf, strlen(send_buf) + 1, 0);
         memset(recv_buf, 0, RECEIVE_BUFF_SIZE) ;
-//        free(send_buf);
-//        send_buf = nullptr;
 
         // 关闭客户端套接字
         close(client_fd) ;
@@ -163,7 +161,6 @@ int HttpServerImpl::sendToClient(int& client_fd, const char *send_buf, int buf_s
     send(client_fd, SERVER_STRING, strlen(SERVER_STRING),0);
     send(client_fd, CONTENT_TYPE, strlen(CONTENT_TYPE), 0);
     send(client_fd, "\r\n", strlen("\r\n"), 0);
-
     memcpy(sendBuff, send_buf, strlen(send_buf));
     LOG(INFO) << "####### send to client:[" << sendBuff<< "]" << endl;
     send(client_fd, sendBuff, buf_size - 1, 0);

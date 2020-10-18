@@ -19,11 +19,13 @@ void handler(int conn)
 {
     while(1)
     {
-        char sendBuff[BUFF_SIZE] = "HTTP/1.0 200 OK\r\n"
-                "Client: sendClient for test/0.1.0\r\n"
-                "Content-Type: text/plain\r\n\r\n"
-                "{\"jsonrpc\":\"1.0\",\"id\":\"1\",\"method\":\"listunspent\", "
-                "\"wallet_type\" : \"2\",\"params\":[\"33CLiih6wUvE7j2wE4e2UdAkFxwFY4u6uu\"]}";
+       // char sendBuff[BUFF_SIZE] = "HTTP/1.0 200 OK\r\n"
+       //         "Client: sendClient for test/0.1.0\r\n"
+       //         "Content-Type: text/plain\r\n\r\n"
+       //         "{\"jsonrpc\":\"1.0\",\"id\":\"1\",\"method\":\"listunspent\", "
+       //         "\"wallet_type\" : \"2\",\"params\":[\"33CLiih6wUvE7j2wE4e2UdAkFxwFY4u6uu\"]}";
+
+        char sendBuff[BUFF_SIZE] = "Hello server!";
 
         int rst = send(conn, sendBuff, strlen(sendBuff) , 0);
         cout << "####### send to server lenth:[" << rst<< "]" << endl;
@@ -72,8 +74,9 @@ void clientConnect()
 
 int main()
 {
-    int i = 1;
-    while(i < 40000)
+    int i = 0;
+	const int count = 1;
+    while(i < count)
     {
         cout << "i:" << i++ << endl;
         thread one(clientConnect);
