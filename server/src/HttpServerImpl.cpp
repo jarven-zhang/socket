@@ -30,7 +30,6 @@ const int RECEIVE_BUFF_SIZE = 526;
 
 HttpServerImpl::HttpServerImpl()
 {
-
 }
 
 HttpServerImpl::~HttpServerImpl() 
@@ -122,6 +121,7 @@ int HttpServerImpl::start()
 
 //        std::vector<std::string>::iterator iter = find(ip_list.begin(), ip_list.end(), client_address);
 
+		//判断这个客户端IP是在白名单中的
         auto iter = find(ip_list.begin(), ip_list.end(), client_address);
         if(iter == ip_list.end())
         {
@@ -130,7 +130,8 @@ int HttpServerImpl::start()
             continue;
         }
 
-        // 接收客户端的请求 
+        // Get the data send by client
+		// 接收缓冲区recv_buf，该缓冲区用来存放recv函数接收到的数据
         if(0 >= recv(client_fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
         {
             LOG(ERROR) << "receive error! Maybe the connect is off!";
@@ -138,7 +139,7 @@ int HttpServerImpl::start()
             continue;
         }
 
-        LOG(INFO) << "####recv from client :" << recv_buf;
+        LOG(INFO) << "recv from client(" << client_address <<") data <<<<<<<< :" << recv_buf;
         // 发送响应给客户端
         //sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
         send(client_fd, send_buf, strlen(send_buf) + 1, 0);

@@ -15,7 +15,7 @@ const char *SERVER_IP  = "127.0.0.1";
 
 using namespace std;
 
-void handler(int conn)
+void handler(const int conn, const string& data)
 {
     while(1)
     {
@@ -25,23 +25,21 @@ void handler(int conn)
        //         "{\"jsonrpc\":\"1.0\",\"id\":\"1\",\"method\":\"listunspent\", "
        //         "\"wallet_type\" : \"2\",\"params\":[\"33CLiih6wUvE7j2wE4e2UdAkFxwFY4u6uu\"]}";
 
-        char sendBuff[BUFF_SIZE] = "Hello server!";
-
-        int rst = send(conn, sendBuff, strlen(sendBuff) , 0);
-        cout << "####### send to server lenth:[" << rst<< "]" << endl;
+        send(conn, data.c_str(), data.size() , 0);
+        cout << "Send to server >>>>>>>>> :" << data << endl;
 
         char receiveBuf[1024] = {0};
         //接收数据
         int num = recv(conn, receiveBuf, 101, 0);
         if(num > 1)
         {
-            cout << "receive:{ " << receiveBuf << "}" << endl;
+        	cout << "Recv from server <<<<<<< :" << receiveBuf << endl;
             return;
         }
     }
 }
 
-void clientConnect()
+void clientConnect(const string& src)
 {
     int sockfd = -1;
     sockfd = socket( AF_INET, SOCK_STREAM, 0 );
@@ -65,21 +63,32 @@ void clientConnect()
         exit( -1 );
     }
 
-    handler(sockfd);
+    handler(sockfd, src);
 
     close(sockfd);
 
     return;
 }
 
-int main()
+int main(int argc, char* arv[])
 {
-    int i = 0;
-	const int count = 1;
-    while(i < count)
+	cout << "---(NOTE: If you want to exit client ,"
+		"please input q or Q or exit)---" << endl;
+	string data;
+
+    while(1)
     {
-        cout << "i:" << i++ << endl;
-        thread one(clientConnect);
+		cout << "Please input the data:";
+		cin >> data;
+
+		if("q" == data or "Q" == data or
+				"exit" == data)
+		{
+			cout << "Exit the client!" << endl;
+			return 0;
+		}
+
+        thread one(clientConnect, data);
 //        one.detach();
         one.join();
     }
