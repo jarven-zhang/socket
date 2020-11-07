@@ -8,16 +8,19 @@
 
 #include "HttpServerImpl.h"
 
-class HttpServer {
+class HttpServer 
+{
 public: 
-  HttpServer();
-  ~HttpServer();
-  int init();
+	HttpServer();
 
-  int start();
+	~HttpServer();
+
+	int init();
+	
+	int start();
 
 private: 
-  HttpServerImpl *httpServerImpl;
+	HttpServerImpl *httpServerImpl;
 };
 
 #endif //_HTTPSERVER_H

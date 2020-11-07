@@ -6,13 +6,9 @@
     > Created Time: Thu 14 Jun 2018 11:17:53 AM CST
  ************************************************************************/
 #include <iostream>
-
 #include <glog/logging.h>
 #include <sys/stat.h>
 #include <algorithm>
-//#include <unistd.h>
-//#include <stdlib.h>
-//#include <string.h>
 #include <memory>
 
 #include "type.h"
