@@ -28,18 +28,12 @@ const int QUEUE_MAX_COUNT = 5;
 const int RECEIVE_BUFF_SIZE = 526;
 //const int SEND_BUFF_SIZE = 526;
 
-HttpServerImpl::HttpServerImpl()
-{
-}
+HttpServerImpl::HttpServerImpl(){}
 
-HttpServerImpl::~HttpServerImpl() 
-{
-
-}
+HttpServerImpl::~HttpServerImpl(){}
 
 int HttpServerImpl::init() 
 {
-    //    LOG(INFO) << __func__ << endl;
     struct sockaddr_in server_addr;
 
     string ip_file = PROOT_PATH;
@@ -54,7 +48,7 @@ int HttpServerImpl::init()
 
     //创建socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd == -1)
+    if (-1 == server_fd)
     {
         LOG(ERROR) << "socket error!";
         exit(-1);
@@ -108,7 +102,7 @@ int HttpServerImpl::start()
 
     while (1)
     {
-        //调用accept函数阻塞程序，直到接收到客户端的请求
+        //调用select函数阻塞程序
         client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len) ;
         if (client_fd < 0)
         {
@@ -119,11 +113,8 @@ int HttpServerImpl::start()
         string client_address = inet_ntoa(client_addr.sin_addr);
         LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
 
-//        std::vector<std::string>::iterator iter = find(ip_list.begin(), ip_list.end(), client_address);
-
 		//判断这个客户端IP是在白名单中的
-        auto iter = find(ip_list.begin(), ip_list.end(), client_address);
-        if(iter == ip_list.end())
+		if(!ipInWhitelist(client_address))
         {
             LOG(ERROR) << "!!!!Unknow client:" << client_address.c_str() << ", close the connector!";
             close(client_fd);
