@@ -3,6 +3,7 @@
  */
 
 #include <string>
+#include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -93,51 +94,63 @@ int HttpServerImpl::start()
     int client_fd = -1;
     struct sockaddr_in client_addr;
 
-    socklen_t client_addr_len = sizeof(client_addr);
+    //socklen_t client_addr_len = sizeof(client_addr);
 
     char recv_buf[RECEIVE_BUFF_SIZE];
     memset(recv_buf, 0, RECEIVE_BUFF_SIZE);
 
     const char send_buf[] = "ok ,we receive it";
 
+	fd_set readSet;
+	int result = -1;
+
+	FD_ZERO(&readSet);
+	FD_SET(server_fd, &readSet);
     while (1)
     {
-        //调用select函数阻塞程序
-        client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len) ;
-        if (client_fd < 0)
-        {
-            LOG(ERROR) << "accept error!";
-            continue;
-        }
+		result = select(1025, &readSet, 0, 0, 0);	
+		if (0 > result or 0 == result)
+		{
+			LOG(ERROR) << "Select error!";
+			//continue;
+			return -1;
+		}
 
-        string client_address = inet_ntoa(client_addr.sin_addr);
-        LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
-
-		//判断这个客户端IP是在白名单中的
-		if(!ipInWhitelist(client_address))
-        {
-            LOG(ERROR) << "!!!!Unknow client:" << client_address.c_str() << ", close the connector!";
-            close(client_fd);
-            continue;
-        }
-
-        // Get the data send by client
-		// 接收缓冲区recv_buf，该缓冲区用来存放recv函数接收到的数据
-        if(0 >= recv(client_fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
-        {
-            LOG(ERROR) << "receive error! Maybe the connect is off!";
-            close(client_fd);
-            continue;
-        }
-
-        LOG(INFO) << "recv from client(" << client_address <<") data <<<<<<<< :" << recv_buf;
-        // 发送响应给客户端
-        //sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
-        send(client_fd, send_buf, strlen(send_buf) + 1, 0);
-        memset(recv_buf, 0, RECEIVE_BUFF_SIZE) ;
-
-        // 关闭客户端套接字
-        close(client_fd) ;
+		for(int fd = 1; fd < result; ++fd)
+		{
+        	string client_address = inet_ntoa(client_addr.sin_addr);
+            LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
+    
+    		//判断这个客户端IP是在白名单中的
+    		if(!ipInWhitelist(client_address))
+            {
+                LOG(ERROR) << "!!!!Unknow client:" << client_address.c_str() << ", close the connector!";
+                close(client_fd);
+                continue;
+            }
+    
+			if (FD_ISSET(fd, &readSet))
+			{
+                // Get the data send by client
+        		// 接收缓冲区recv_buf，该缓冲区用来存放recv函数接收到的数据
+                if(0 >= recv(fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
+                {
+                    LOG(ERROR) << "receive error! Maybe the connect is off!";
+                    close(client_fd);
+                    continue;
+                }
+        
+                LOG(INFO) << "recv from client(" << client_address <<") data <<<<<<<< :" << recv_buf;
+                // 发送响应给客户端
+                //sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
+                send(client_fd, send_buf, strlen(send_buf) + 1, 0);
+                memset(recv_buf, 0, RECEIVE_BUFF_SIZE) ;
+        
+				FD_CLR(fd, &readSet);
+                // 关闭客户端套接字
+                close(client_fd) ;
+			}//if
+		}//for
     }
 
     return 0;
