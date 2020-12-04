@@ -25,7 +25,7 @@ public:
 
 private: 
 
-    int server_fd;
+    int listen_fd;
 
     std::vector<std::string> ip_list;
 

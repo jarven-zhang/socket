@@ -20,14 +20,9 @@
 
 using namespace std;
 
-const string ALLOWIP = "allowip";
-const char * HTTP_HEAD = "HTTP/1.0 200 OK\r\n";
-const char * SERVER_STRING = "Server: omniWallethttpd/0.1.0\r\n";
-const char * CONTENT_TYPE = "Content-Type: text/plain\r\n";
-
 const int QUEUE_MAX_COUNT = 5;
 const int RECEIVE_BUFF_SIZE = 526;
-//const int SEND_BUFF_SIZE = 526;
+const int SEND_BUFF_SIZE = 526;
 
 HttpServerImpl::HttpServerImpl(){}
 
@@ -48,8 +43,8 @@ int HttpServerImpl::init()
     }
 
     //创建socket
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (-1 == server_fd)
+    listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (-1 == listen_fd)
     {
         LOG(ERROR) << "socket error!";
         exit(-1);
@@ -63,24 +58,24 @@ int HttpServerImpl::init()
 
     //套接字关闭后, 套接字状态TIME_WAIT约保留2到4分钟, 为了不bind失败，设置允许重用
     int on = 1;
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
     //绑定
-    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr))  < 0)
+    if (bind(listen_fd, (struct sockaddr *)&server_addr, sizeof(server_addr))  < 0)
     {
         LOG(ERROR) << "bind error!";
 
-        close(server_fd);
-        server_fd = -1;
+        close(listen_fd);
+        listen_fd = -1;
         exit(-1) ;
     }
 
     //监听
-    if (listen(server_fd, QUEUE_MAX_COUNT) < 0)
+    if (listen(listen_fd, QUEUE_MAX_COUNT) < 0)
     {
         LOG(ERROR) << "listen error!";
-        close(server_fd);
-        server_fd = -1;
+        close(listen_fd);
+        listen_fd = -1;
         exit(-1) ;
     }
 
@@ -91,81 +86,98 @@ int HttpServerImpl::init()
 
 int HttpServerImpl::start() 
 {
-    int client_fd = -1;
     struct sockaddr_in client_addr;
-
-    //socklen_t client_addr_len = sizeof(client_addr);
+	socklen_t clientAddrLen = sizeof(client_addr);
 
     char recv_buf[RECEIVE_BUFF_SIZE];
     memset(recv_buf, 0, RECEIVE_BUFF_SIZE);
 
-    const char send_buf[] = "ok ,we receive it";
+    string send_buf = "[Receive]:";
 
 	fd_set readSet;
-	int result = -1;
+	int maxFd = listen_fd;
 
 	FD_ZERO(&readSet);
-	FD_SET(server_fd, &readSet);
+	FD_SET(listen_fd, &readSet);//将监听的端口放进集合
+	//cout << "-----listen fd is:" << listen_fd << endl;
     while (1)
     {
-		result = select(1025, &readSet, 0, 0, 0);	
-		if (0 > result or 0 == result)
+		//创建临时fds, 供select循环设置
+		fd_set tmp_fds = readSet;
+		//当收到消息或超时时，select会返回，排除掉错误情况
+		if( 0 >= select(maxFd + 1, &tmp_fds, 0, 0, 0))
 		{
 			LOG(ERROR) << "Select error!";
 			//continue;
 			return -1;
 		}
 
-		for(int fd = 1; fd < result; ++fd)
+		//开始遍历所有fd，查找有消息的fd
+		for(int fd = 0; fd <= maxFd; ++fd)
 		{
-        	string client_address = inet_ntoa(client_addr.sin_addr);
-            LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
-    
-    		//判断这个客户端IP是在白名单中的
-    		if(!ipInWhitelist(client_address))
-            {
-                LOG(ERROR) << "!!!!Unknow client:" << client_address.c_str() << ", close the connector!";
-                close(client_fd);
-                continue;
-            }
-    
-			if (FD_ISSET(fd, &readSet))
+			if (FD_ISSET(fd, &readSet) <= 0)
+				continue;
+
+			cout << " Now we receive fd:" << fd << endl;
+			//如果fd等于listen fd说明是有新的连接上来
+			if (listen_fd == fd)
+			{
+				int client_fd = accept(fd, (sockaddr*)&client_addr, &clientAddrLen);
+				FD_SET(client_fd, &readSet);
+				if (maxFd < client_fd)
+				{
+					maxFd = client_fd;
+				}
+
+            	string client_address = inet_ntoa(client_addr.sin_addr);
+                LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
+        
+        		//判断这个客户端IP是在白名单中的
+        		if(!ipInWhitelist(client_address))
+                {
+					const char *errorString = "You can not connet to it!";
+                    LOG(ERROR) << "!!!!Unknow client:" << client_address.c_str() << ", close the connector!";
+                	send(client_fd, errorString, strlen(errorString) + 1, 0);
+                    close(client_fd);
+                    break;
+                }
+			}
+			else//说明此fd是已经连接上来且开始传输数据
 			{
                 // Get the data send by client
         		// 接收缓冲区recv_buf，该缓冲区用来存放recv函数接收到的数据
                 if(0 >= recv(fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
                 {
                     LOG(ERROR) << "receive error! Maybe the connect is off!";
-                    close(client_fd);
-                    continue;
+					FD_CLR(fd, &readSet);
+                    close(fd);
+                    break;
                 }
-        
-                LOG(INFO) << "recv from client(" << client_address <<") data <<<<<<<< :" << recv_buf;
-                // 发送响应给客户端
-                //sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
-                send(client_fd, send_buf, strlen(send_buf) + 1, 0);
-                memset(recv_buf, 0, RECEIVE_BUFF_SIZE) ;
-        
-				FD_CLR(fd, &readSet);
-                // 关闭客户端套接字
-                close(client_fd) ;
-			}//if
-		}//for
-    }
+
+	            // 发送响应给客户端
+            	//sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
+				send_buf += recv_buf;
+            	send(fd, send_buf.c_str(), send_buf.size() + 1, 0);
+			}
+		}//for end
+		cout << "--------------one time for---------" << endl;
+    }//while end
+    close(listen_fd) ;
 
     return 0;
 }
-
 
 int HttpServerImpl::sendToClient(int& client_fd, const char *send_buf, int buf_size)
 {
     char sendBuff[buf_size];
     memset(sendBuff, 0, buf_size);
 
+#if 0
     send(client_fd, HTTP_HEAD, strlen(HTTP_HEAD), 0);
     send(client_fd, SERVER_STRING, strlen(SERVER_STRING),0);
     send(client_fd, CONTENT_TYPE, strlen(CONTENT_TYPE), 0);
     send(client_fd, "\r\n", strlen("\r\n"), 0);
+#endif
     memcpy(sendBuff, send_buf, strlen(send_buf));
     LOG(INFO) << "####### send to client:[" << sendBuff<< "]" << endl;
     send(client_fd, sendBuff, buf_size - 1, 0);
