@@ -37,7 +37,7 @@ int HttpServerImpl::init()
     string ip_file = PROOT_PATH;
     ip_file += IP_PATH;
 
-	//获取IP白名
+	//获取IP白名单
     if(-1 == RmTool::getIpWhitelist(ip_file, ip_list))
     {
         LOG(ERROR) << "read configure file error!";
