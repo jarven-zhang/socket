@@ -95,43 +95,55 @@ int HttpServerImpl::start()
     string send_buf = "[Receive]:";
 
 	fd_set readSet;
-	int maxFd = listen_fd;
 
 	FD_ZERO(&readSet);
 	FD_SET(listen_fd, &readSet);//将监听的端口放进集合
-	//cout << "-----listen fd is:" << listen_fd << endl;
+	int maxFd = listen_fd;
+
     while (1)
     {
 		//创建临时fds, 供select循环设置
 		fd_set tmp_fds = readSet;
 		//当收到消息或超时时，select会返回，排除掉错误情况
-		if( 0 >= select(maxFd + 1, &tmp_fds, 0, 0, 0))
+		if( 0 >= select(maxFd + 1, &tmp_fds, NULL, NULL, NULL))
 		{
 			LOG(ERROR) << "Select error!";
 			//continue;
-			return -1;
+			break;
 		}
 
+		//cout << " We have get select!----" <<  endl;
 		//开始遍历所有fd，查找有消息的fd
 		for(int fd = 0; fd <= maxFd; ++fd)
 		{
-			if (FD_ISSET(fd, &readSet) <= 0)
+			if (!FD_ISSET(fd, &tmp_fds))
+			{
 				continue;
+			}
 
-			cout << " Now we receive fd:" << fd << endl;
+            cout << "Get a fd:" << fd << endl;
+
 			//如果fd等于listen fd说明是有新的连接上来
 			if (listen_fd == fd)
 			{
 				int client_fd = accept(fd, (sockaddr*)&client_addr, &clientAddrLen);
+				if (client_fd < 0)
+				{
+					LOG(ERROR) << "accept error!";
+					continue;
+				}
+
 				FD_SET(client_fd, &readSet);
 				if (maxFd < client_fd)
 				{
 					maxFd = client_fd;
 				}
+				continue;
 
             	string client_address = inet_ntoa(client_addr.sin_addr);
                 LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
         
+#if 0
         		//判断这个客户端IP是在白名单中的
         		if(!ipInWhitelist(client_address))
                 {
@@ -141,12 +153,13 @@ int HttpServerImpl::start()
                     close(client_fd);
                     break;
                 }
+#endif
 			}
 			else//说明此fd是已经连接上来且开始传输数据
 			{
                 // Get the data send by client
         		// 接收缓冲区recv_buf，该缓冲区用来存放recv函数接收到的数据
-                if(0 >= recv(fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
+                if(0 > recv(fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
                 {
                     LOG(ERROR) << "receive error! Maybe the connect is off!";
 					FD_CLR(fd, &readSet);
@@ -154,13 +167,13 @@ int HttpServerImpl::start()
                     break;
                 }
 
+                LOG(INFO) << "Recv client's data:" << recv_buf;
 	            // 发送响应给客户端
             	//sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
 				send_buf += recv_buf;
             	send(fd, send_buf.c_str(), send_buf.size() + 1, 0);
 			}
 		}//for end
-		cout << "--------------one time for---------" << endl;
     }//while end
     close(listen_fd) ;
 

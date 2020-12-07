@@ -44,7 +44,8 @@ int sendMsg(const int conn)
 
         send(conn, data.c_str(), data.size() , 0);
         //cout << "Send to server >>>>>>>>> :" << data << endl;
-
+        cout << "Send to server and waite for the recv!" << endl;
+#if 1
         char receiveBuf[RECEIVE_BUFF_SIZE] = {0};
         //接收数据
         int num = recv(conn, receiveBuf, RECEIVE_BUFF_SIZE, 0);
@@ -52,6 +53,7 @@ int sendMsg(const int conn)
         {
         	cout << "Recv from server <<<<<<< :" << receiveBuf << endl;
         }
+#endif
     }
 
 	return 0;
