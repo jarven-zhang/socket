@@ -9,11 +9,13 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <algorithm>
+#include <sys/epoll.h>
 #include "HttpServerImpl.h"
 #include "rmtool.h"
 #include "glog/logging.h"
 #include "type.h"
 
+#define MAX_EVENTS 10
 /**
  * HttpServerImpl implementation
  */
@@ -94,51 +96,61 @@ int HttpServerImpl::start()
 
     string send_buf = "[Receive]:";
 
-	fd_set readSet;
+	int nfds = -1;
+	struct epoll_event ev;
+	struct epoll_event events[MAX_EVENTS];
 
-	FD_ZERO(&readSet);
-	FD_SET(listen_fd, &readSet);//将监听的端口放进集合
-	int maxFd = listen_fd;
+	int epollfd = epoll_create(10);
+	if (epollfd < 0)
+	{
+		LOG(ERROR) << "Select error!";
+		exit(-1);
+	}
+
+	ev.events = EPOLLIN;
+	ev.data.fd = listen_fd;
+
+	//这些代码都可以直接通过man epoll来获取，里面有示例
+	if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, listen_fd, &ev))
+	{
+    	perror("epoll_ctl: listen_sock");
+    	exit(EXIT_FAILURE);
+ 	}
 
     while (1)
     {
-		//创建临时fds, 供select循环设置
-		fd_set tmp_fds = readSet;
-		//当收到消息或超时时，select会返回，排除掉错误情况
-		if( 0 >= select(maxFd + 1, &tmp_fds, NULL, NULL, NULL))
+		//epoll_wait阻塞监听消息, 返回值为有事件的fd的数量
+		nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
+		if (nfds == -1) 
 		{
-			LOG(ERROR) << "Select error!";
-			//continue;
-			break;
+    		perror("epoll_pwait");
+		    exit(EXIT_FAILURE);
 		}
 
-		//cout << " We have get select!----" <<  endl;
+		//cout << " We have get epoll!----" <<  endl;
 		//开始遍历所有fd，查找有消息的fd
-		for(int fd = 0; fd <= maxFd; ++fd)
+		for(int n = 0; n < nfds; ++n)
 		{
-			if (!FD_ISSET(fd, &tmp_fds))
-			{
-				continue;
-			}
-
-            cout << "Get a fd:" << fd << endl;
+            cout << "Get a fd:" << n << endl;
 
 			//如果fd等于listen fd说明是有新的连接上来
-			if (listen_fd == fd)
+			if (listen_fd == events[n].data.fd)
 			{
-				int client_fd = accept(fd, (sockaddr*)&client_addr, &clientAddrLen);
+				int client_fd = accept(n, (sockaddr*)&client_addr, &clientAddrLen);
 				if (client_fd < 0)
 				{
 					LOG(ERROR) << "accept error!";
 					continue;
 				}
 
-				FD_SET(client_fd, &readSet);
-				if (maxFd < client_fd)
+				RmTool::setnonblocking(client_fd);
+				ev.events = EPOLLIN | EPOLLET;
+				ev.data.fd = client_fd;
+				if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, client_fd, &ev))
 				{
-					maxFd = client_fd;
-				}
-				continue;
+                	perror("epoll_ctl: conn_sock");
+                    exit(EXIT_FAILURE);
+                }
 
             	string client_address = inet_ntoa(client_addr.sin_addr);
                 LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
@@ -157,12 +169,12 @@ int HttpServerImpl::start()
 			}
 			else//说明此fd是已经连接上来且开始传输数据
 			{
+				int fd = events[n].data.fd;
                 // Get the data send by client
         		// 接收缓冲区recv_buf，该缓冲区用来存放recv函数接收到的数据
                 if(0 > recv(fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
                 {
                     LOG(ERROR) << "receive error! Maybe the connect is off!";
-					FD_CLR(fd, &readSet);
                     close(fd);
                     break;
                 }
