@@ -96,20 +96,20 @@ int HttpServerImpl::start()
 
     string send_buf = "[Receive]:";
 
-	int nfds = -1;
-	struct epoll_event ev;
-	struct epoll_event events[MAX_EVENTS];
+	int nfds = 0;
+	struct epoll_event ev;//作为监听fd的epoll事件
+	struct epoll_event events[MAX_EVENTS];//作为epoll_wait的事件列表返回数组
 
 	int epollfd = epoll_create(10);
 	if (epollfd < 0)
 	{
-		LOG(ERROR) << "Select error!";
+		LOG(ERROR) << "Epoll create error!";
 		exit(-1);
 	}
 
+	//添加监听fd
 	ev.events = EPOLLIN;
 	ev.data.fd = listen_fd;
-
 	//这些代码都可以直接通过man epoll来获取，里面有示例
 	if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, listen_fd, &ev))
 	{
@@ -117,26 +117,30 @@ int HttpServerImpl::start()
     	exit(EXIT_FAILURE);
  	}
 
+	cout << "----------------listen fd: " << listen_fd << endl;
+
+	//创建一个临时变量存放Fd
+	int tmp_fd = -1;
     while (1)
     {
 		//epoll_wait阻塞监听消息, 返回值为有事件的fd的数量
-		nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
-		if (nfds == -1) 
+		nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);//参数-1表示阻塞
+		if (nfds < 0)
 		{
     		perror("epoll_pwait");
 		    exit(EXIT_FAILURE);
 		}
 
-		//cout << " We have get epoll!----" <<  endl;
 		//开始遍历所有fd，查找有消息的fd
 		for(int n = 0; n < nfds; ++n)
 		{
-            cout << "Get a fd:" << n << endl;
+			tmp_fd = events[n].data.fd;
+            cout << "Get a fd:" << tmp_fd << endl;
 
 			//如果fd等于listen fd说明是有新的连接上来
-			if (listen_fd == events[n].data.fd)
+			if (listen_fd == tmp_fd)
 			{
-				int client_fd = accept(n, (sockaddr*)&client_addr, &clientAddrLen);
+				int client_fd = accept(tmp_fd, (sockaddr*)&client_addr, &clientAddrLen);
 				if (client_fd < 0)
 				{
 					LOG(ERROR) << "accept error!";
@@ -169,13 +173,12 @@ int HttpServerImpl::start()
 			}
 			else//说明此fd是已经连接上来且开始传输数据
 			{
-				int fd = events[n].data.fd;
                 // Get the data send by client
         		// 接收缓冲区recv_buf，该缓冲区用来存放recv函数接收到的数据
-                if(0 > recv(fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
+                if(0 > recv(tmp_fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
                 {
                     LOG(ERROR) << "receive error! Maybe the connect is off!";
-                    close(fd);
+                    close(tmp_fd);
                     break;
                 }
 
@@ -183,7 +186,7 @@ int HttpServerImpl::start()
 	            // 发送响应给客户端
             	//sendToClient(client_fd, send_buf, strlen(send_buf) + 1);
 				send_buf += recv_buf;
-            	send(fd, send_buf.c_str(), send_buf.size() + 1, 0);
+            	send(tmp_fd, send_buf.c_str(), send_buf.size() + 1, 0);
 			}
 		}//for end
     }//while end
