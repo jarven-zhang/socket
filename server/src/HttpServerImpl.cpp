@@ -159,7 +159,7 @@ int HttpServerImpl::start()
             	string client_address = inet_ntoa(client_addr.sin_addr);
                 LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
         
-#if 
+#if 1
         		//判断这个客户端IP是在白名单中的
         		if(!ipInWhitelist(client_address))
                 {
