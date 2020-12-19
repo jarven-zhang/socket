@@ -92,7 +92,6 @@ int HttpServerImpl::start()
 	socklen_t clientAddrLen = sizeof(client_addr);
 
     char recv_buf[RECEIVE_BUFF_SIZE];
-    memset(recv_buf, 0, RECEIVE_BUFF_SIZE);
 
     string send_buf = "[Receive]:";
 
@@ -173,6 +172,8 @@ int HttpServerImpl::start()
 			}
 			else//说明此fd是已经连接上来且开始传输数据
 			{
+    			memset(recv_buf, 0, RECEIVE_BUFF_SIZE);
+
                 // Get the data send by client
         		// 接收缓冲区recv_buf，该缓冲区用来存放recv函数接收到的数据
                 if(0 > recv(tmp_fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
