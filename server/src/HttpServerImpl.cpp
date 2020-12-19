@@ -16,6 +16,7 @@
 #include "type.h"
 
 #define MAX_EVENTS 10
+#define W_LIST 0
 /**
  * HttpServerImpl implementation
  */
@@ -158,7 +159,7 @@ int HttpServerImpl::start()
             	string client_address = inet_ntoa(client_addr.sin_addr);
                 LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
         
-#if 1
+#if W_LIST
         		//判断这个客户端IP是在白名单中的
         		if(!ipInWhitelist(client_address))
                 {
