@@ -174,6 +174,7 @@ int HttpServerImpl::start()
 			else//说明此fd是已经连接上来且开始传输数据
 			{
     			memset(recv_buf, 0, RECEIVE_BUFF_SIZE);
+    			send_buf.clear();
 
                 // Get the data send by client
         		// 接收缓冲区recv_buf，该缓冲区用来存放recv函数接收到的数据

@@ -11,13 +11,15 @@
 
 const int  SERVER_PORT = 7878;
 const int  BUFF_SIZE   = 526;
-const char *SERVER_IP  = "127.0.0.1";
+//const char *SERVER_IP  = "127.0.0.1";
+const char *SERVER_IP  = "121.4.82.217";
 const int RECEIVE_BUFF_SIZE = 526;
 
 using namespace std;
 
 int sendMsg(const int conn)
 {
+    char receiveBuf[RECEIVE_BUFF_SIZE] = {0};
 	cout << "---(NOTE: If you want to exit client ,"
 		"please input q or Q or exit)---" << endl;
 
@@ -44,16 +46,14 @@ int sendMsg(const int conn)
 
         send(conn, data.c_str(), data.size() , 0);
         //cout << "Send to server >>>>>>>>> :" << data << endl;
-        cout << "Send to server and waite for the recv!" << endl;
-#if 1
-        char receiveBuf[RECEIVE_BUFF_SIZE] = {0};
+
         //接收数据
+		memset(receiveBuf, 0, RECEIVE_BUFF_SIZE);
         int num = recv(conn, receiveBuf, RECEIVE_BUFF_SIZE, 0);
         if(num > 1)
         {
         	cout << "Recv from server <<<<<<< :" << receiveBuf << endl;
         }
-#endif
     }
 
 	return 0;
