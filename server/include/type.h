@@ -7,6 +7,6 @@
 
 #define PROOT_PATH "./"
 #define IP_PATH "./config/allowip.cfg"
-#define HTTP_PORT 7878
+#define HTTP_PORT 4286
 
 #endif // TYPE_H

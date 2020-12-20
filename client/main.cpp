@@ -9,10 +9,10 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-const int  SERVER_PORT = 7878;
+const int  SERVER_PORT = 4286;
 const int  BUFF_SIZE   = 526;
 //const char *SERVER_IP  = "127.0.0.1";
-const char *SERVER_IP  = "121.4.82.217";
+const char *SERVER_IP  = "121.4.82.218";
 const int RECEIVE_BUFF_SIZE = 526;
 
 using namespace std;
@@ -59,7 +59,7 @@ int sendMsg(const int conn)
 	return 0;
 }
 
-int connectToServer(int & sockfd)
+int connectToServer(int & sockfd, const char* server_ip, const int server_port)
 {
     sockfd = socket( AF_INET, SOCK_STREAM, 0 );
     if ( -1 == sockfd )
@@ -71,8 +71,10 @@ int connectToServer(int & sockfd)
     struct sockaddr_in server;
     memset( &server, 0, sizeof( struct sockaddr_in ) );
     server.sin_family      = AF_INET;
-    server.sin_port        = htons(SERVER_PORT) ;
-    server.sin_addr.s_addr = inet_addr(SERVER_IP) ;
+    //server.sin_port        = htons(SERVER_PORT) ;
+    //server.sin_addr.s_addr = inet_addr(SERVER_IP) ;
+    server.sin_port        = htons(server_port) ;
+    server.sin_addr.s_addr = inet_addr(server_ip) ;
 
     int res = -1;
     res = connect( sockfd, (struct sockaddr*)&server, sizeof( sockaddr ) );
@@ -86,10 +88,16 @@ int connectToServer(int & sockfd)
     return 0;
 }
 
-int main(int argc, char* arv[])
+int main(int argc, char* argv[])
 {
+	if (2 > argc)
+	{
+        cout << "Please input right args!" << endl;
+        exit( -1 );
+	}
+
     int sockfd = -1;
-	connectToServer(sockfd);
+	connectToServer(sockfd, argv[1], atoi(argv[2]));
     sendMsg(sockfd);
 
     close(sockfd);
