@@ -1,6 +1,7 @@
 #include "rmtool.h"
 #include "glog/logging.h"
 #include <fstream>
+#include <fcntl.h>     /* nonblocking */
 using namespace std;
 
 const int BUFF_SIZE = 100;
@@ -74,4 +75,13 @@ int RmTool::getIpWhitelist(const string& file, vector<string>& value)
 		value.emplace_back(tmp);
 	}
 	return 0;
+}
+
+/*设置fd为非阻塞*/
+int RmTool::setnonblocking(int sockfd)
+{
+    if (fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFD, 0)|O_NONBLOCK) == -1) {
+        return -1;
+    }
+    return 0;
 }

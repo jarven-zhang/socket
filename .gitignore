@@ -1,2 +1,6 @@
 *.o
-*.swp
+config/allowip.cfg
+log/
+server
+client
+tags

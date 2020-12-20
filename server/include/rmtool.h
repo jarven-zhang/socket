@@ -10,6 +10,7 @@ public:
 	
 	static int readConfigFile(const std::string& cfgfilepath, const std::string& key, std::vector<std::string>& value);
 	static int getIpWhitelist(const std::string& file, std::vector<std::string>& value);	
+	static int setnonblocking(int sockfd);
 };
 
 #endif // RMTOOL_H
