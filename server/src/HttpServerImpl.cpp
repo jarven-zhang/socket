@@ -117,7 +117,7 @@ int HttpServerImpl::start()
     	exit(EXIT_FAILURE);
  	}
 
-	cout << "----------------listen fd: " << listen_fd << endl;
+	//cout << "----------------listen fd: " << listen_fd << endl;
 
 	//创建一个临时变量存放Fd
 	int tmp_fd = -1;
@@ -135,7 +135,7 @@ int HttpServerImpl::start()
 		for(int n = 0; n < nfds; ++n)
 		{
 			tmp_fd = events[n].data.fd;
-            cout << "Get a fd:" << tmp_fd << endl;
+            //cout << "Get a fd:" << tmp_fd << endl;
 
 			//如果fd等于listen fd说明是有新的连接上来
 			if (listen_fd == tmp_fd)
@@ -178,7 +178,7 @@ int HttpServerImpl::start()
 
                 // Get the data send by client
         		// 接收缓冲区recv_buf，该缓冲区用来存放recv函数接收到的数据
-                if(0 > recv(tmp_fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
+                if(0 >= recv(tmp_fd, recv_buf, RECEIVE_BUFF_SIZE, 0))
                 {
                     LOG(ERROR) << "receive error! Maybe the connect is off!";
                     close(tmp_fd);
