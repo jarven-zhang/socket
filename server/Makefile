@@ -1,6 +1,7 @@
 DIR_INC = ./include
 DIR_SRC = ./src
 
+INCLUDED = ./*.h
 SRC = ./*.cpp
 
 TARGET = server
@@ -9,8 +10,8 @@ LIB = -lpthread -L/usr/lib64/ -lglog
 CC = g++
 CFLAGS = -g -Wall -I${DIR_INC} -std=c++11
 
-${TARGET}:${DIR_SRC}/${SRC}
-	$(CC) ${CFLAGS} $^ -o $@ ${LIB}
+${TARGET}:${DIR_SRC}/${SRC} ${DIR_INC}/${INCLUDE}
+	$(CC) ${CFLAGS} $< -o $@ ${LIB}
     
 
 .PHONY:clean
