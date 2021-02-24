@@ -11,8 +11,8 @@
 
 const int  SERVER_PORT = 4286;
 const int  BUFF_SIZE   = 526;
-//const char *SERVER_IP  = "127.0.0.1";
-const char *SERVER_IP  = "121.4.82.218";
+const char *SERVER_IP  = "127.0.0.1";
+//const char *SERVER_IP  = "121.4.82.218";
 const int RECEIVE_BUFF_SIZE = 526;
 
 using namespace std;
@@ -88,23 +88,29 @@ int connectToServer(int & sockfd, const char* server_ip, const int server_port)
     return 0;
 }
 
+
 int main(int argc, char* argv[])
 {
+    int sockfd = -1;
+#if 1
 	if (2 > argc)
 	{
         cout << "Please input right args!" << endl;
         exit( -1 );
 	}
 
-    int sockfd = -1;
 	connectToServer(sockfd, argv[1], atoi(argv[2]));
     sendMsg(sockfd);
 
     close(sockfd);
 
-#if 0
-    thread one(connectToServer, data);
-	one.join();
+#else
+	for (int i = 0; i < 10; ++i)
+	{
+    	thread one(connectToServer, ref(sockfd), SERVER_IP, SERVER_PORT);
+		one.detach();
+	}
+
     while(1)
     {
 		sleep(1);

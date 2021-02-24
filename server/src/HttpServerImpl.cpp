@@ -14,6 +14,7 @@
 #include "rmtool.h"
 #include "glog/logging.h"
 #include "type.h"
+#include "unistd.h"
 
 #define MAX_EVENTS 10
 #define W_LIST 0
@@ -117,12 +118,13 @@ int HttpServerImpl::start()
     	exit(EXIT_FAILURE);
  	}
 
-	//cout << "----------------listen fd: " << listen_fd << endl;
+	cout << "----------------listen fd: " << listen_fd << endl;
 
 	//创建一个临时变量存放Fd
 	int tmp_fd = -1;
     while (1)
     {
+#if 1
 		//epoll_wait阻塞监听消息, 返回值为有事件的fd的数量
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);//参数-1表示阻塞
 		if (nfds < 0)
@@ -158,6 +160,7 @@ int HttpServerImpl::start()
 
             	string client_address = inet_ntoa(client_addr.sin_addr);
                 LOG(INFO) << "accept a client ! ip:" << client_address.c_str();
+				sleep(6);
         
 #if W_LIST
         		//判断这个客户端IP是在白名单中的
@@ -192,6 +195,7 @@ int HttpServerImpl::start()
             	send(tmp_fd, send_buf.c_str(), send_buf.size() + 1, 0);
 			}
 		}//for end
+#endif
     }//while end
     close(listen_fd) ;
 
