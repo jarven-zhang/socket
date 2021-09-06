@@ -9,7 +9,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-const int  SERVER_PORT = 7878;
+const int  SERVER_PORT = 4286;
+//const int  SERVER_PORT = 7878;
 const int  BUFF_SIZE   = 526;
 const char *SERVER_IP  = "127.0.0.1";
 const int RECEIVE_BUFF_SIZE = 526;
